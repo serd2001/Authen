@@ -255,3 +255,5 @@ func DeleteCompany(c *fiber.Ctx) error {
 		"message": "Company removed successfully",
 	})
 }
+
+
