@@ -34,7 +34,7 @@ func Close() {
 			log.Printf("⚠️  Error getting database instance: %v", err)
 			return
 		}
-		
+
 		if err := sqlDB.Close(); err != nil {
 			log.Printf("⚠️  Error closing database: %v", err)
 		} else {
@@ -49,59 +49,8 @@ func AutoMigrate() {
 		&models.User{},
 		&models.Role{},
 		&models.User_Details{},
+		&models.JobType{},
+		&models.Job{},
+		&models.Company{},
 	)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-// package database
-
-// import (
-// 	"Auth/models"
-// 	"fmt"
-// 	"log"
-// 	"os"
-
-// 	"gorm.io/driver/postgres"
-// 	"gorm.io/gorm"
-// )
-
-// var DB *gorm.DB
-
-// func Connect() {
-// 	dsn := os.Getenv("POSTGRES_AUTHENTICATE")
-// 	if dsn == "" {
-// 		log.Fatal("❌ POSTGRES_AUTHENTICATE is not set")
-// 	}
-
-// 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-// 	if err != nil {
-// 		log.Fatalf("❌ GORM open failed: %v", err)
-// 	}
-
-// 	// 🔥 IMPORTANT: real connection test
-// 	sqlDB, err := db.DB()
-// 	if err != nil {
-// 		log.Fatalf("❌ Failed to get sql.DB: %v", err)
-// 	}
-
-// 	if err := sqlDB.Ping(); err != nil {
-// 		log.Fatalf("❌ Database ping failed: %v", err)
-// 	}
-
-// 	DB = db
-// 	log.Println("✅ PostgreSQL connected successfully")
-// 	// Auto migrate all models
-// 	DB.AutoMigrate(&models.User{}, &models.User_Details{})
-// 	fmt.Println("Database migrated success")
-// }

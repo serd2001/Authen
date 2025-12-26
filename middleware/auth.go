@@ -1,7 +1,9 @@
 package middleware
 
 import (
+	"Auth/database"
 	"Auth/firebase"
+	"Auth/models"
 	"context"
 	"strings"
 
@@ -13,25 +15,48 @@ func FirebaseAuth() fiber.Handler {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
 			return c.Status(401).JSON(fiber.Map{
-				"error": "Missing Authorization header",
+				"success": false,
+				"message": "Missing Authorization header",
 			})
 		}
 
-		token := strings.Replace(authHeader, "Bearer ", "", 1)
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			return c.Status(401).JSON(fiber.Map{
+				"success": false,
+				"message": "Invalid Authorization format",
+			})
+		}
+
+		idToken := parts[1]
 
 		client := firebase.GetAuthClient()
-
-		decoded, err := client.VerifyIDToken(context.Background(), token)
+		decoded, err := client.VerifyIDToken(context.Background(), idToken)
 		if err != nil {
 			return c.Status(401).JSON(fiber.Map{
-				"error": "Invalid Firebase token",
+				"success": false,
+				"message": "Invalid Firebase token",
 			})
 		}
 
-		// Save user info in context
-		c.Locals("uid", decoded.UID)
-		c.Locals("email", decoded.Claims["email"])
+		// 🔥 Find user in DB by Firebase UID
+		var user models.User
+		if err := database.DB.
+			Where("firebase_uid = ?", decoded.UID).
+			First(&user).Error; err != nil {
 
+			return c.Status(401).JSON(fiber.Map{
+				"success": false,
+				"message": "User not registered",
+			})
+		}
+
+		// ✅ SET WHAT YOUR HANDLER EXPECTS
+		c.Locals("user_id", user.ID)
+		c.Locals("user", user.User_Details.Name)
+		c.Locals("roles", user.Roles)
+		c.Locals("firebase_uid", decoded.UID)
+		c.Locals("email", user.Email)
 		return c.Next()
 	}
 }

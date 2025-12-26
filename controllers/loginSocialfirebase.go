@@ -6,14 +6,12 @@ import (
 	"Auth/models"
 	"Auth/utils"
 	"context"
-	"strings"
 
-	"firebase.google.com/go/v4/auth"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
 
-func LoginWithFirebase(c *fiber.Ctx) error {
+func LoginSocialFirebase(c *fiber.Ctx) error {
 	// Define the expected request structure
 	type FirebaseLoginReq struct {
 		IdToken string `json:"id_token"` // Firebase ID token from client
@@ -105,6 +103,10 @@ func LoginWithFirebase(c *fiber.Ctx) error {
 				"message": err.Error(),
 			})
 		}
+		// creat user details
+		database.DB.Create(&models.User_Details{
+			UserID: user.ID,
+		})
 	}
 
 	// Generate custom claims for Firebase token
@@ -136,7 +138,7 @@ func LoginWithFirebase(c *fiber.Ctx) error {
 		"success": true,
 		"message": "Login successful",
 		"data": fiber.Map{
-			"token":      jwtToken,  // JWT token for API authentication
+			"token": jwtToken, // JWT token for API authentication
 			//"expires_in": expiresIn, // Token expiration time in seconds (86400 = 24 hours)
 			"user": fiber.Map{
 				"id":       user.ID,                           // Database user ID
@@ -147,55 +149,4 @@ func LoginWithFirebase(c *fiber.Ctx) error {
 			},
 		},
 	})
-}
-
-// getProvider and Returns
-func getProvider(user *auth.UserRecord) string {
-	// Check if user has any provider information
-	if len(user.ProviderUserInfo) > 0 {
-		// Get the first provider ID (primary authentication method)
-		providerID := user.ProviderUserInfo[0].ProviderID
-
-		// Map Firebase provider IDs to friendly names
-		switch providerID {
-		case "google.com":
-			return "google"
-		case "facebook.com":
-			return "facebook"
-		case "apple.com":
-			return "apple"
-		default:
-			return providerID // Return raw provider ID if not matched
-		}
-	}
-	// If no provider info exists, assume email/password authentication
-	return "password"
-}
-func generateUniqueUsername(db *gorm.DB, user *auth.UserRecord, uid string) string {
-	baseUsername := ""
-
-	// Priority 1: DisplayName
-	if user.DisplayName != "" {
-		cleaned := strings.ReplaceAll(user.DisplayName, " ", "_")
-		baseUsername = strings.ToLower(cleaned)
-	} else if user.Email != "" {
-		// Priority 2: Email prefix
-		parts := strings.Split(user.Email, "@")
-		baseUsername = parts[0]
-	} else {
-		// Priority 3: Fallback
-		baseUsername = "user"
-	}
-
-	// Check if username exists
-	username := baseUsername
-	var existingUser models.User
-	err := db.Where("username = ?", username).First(&existingUser).Error
-
-	// If username exists, add UID suffix
-	if err == nil {
-		username = baseUsername + "_" + uid[:8]
-	}
-
-	return username
 }
