@@ -89,11 +89,12 @@ func main() {
 	//ramit
 	app.Use(middleware.RateLimiter())
 	//call firebase init
-	firebase.InitFirebase()
-	authClient := firebase.GetAuthClient()
-	if authClient != nil {
-		log.Println("create firebase success")
-	}
+	   firebase.InitFirebase()
+        
+    // Check Firebase connection
+
+
+    // Continue with app startup, e.g., start Fiber, routes...
 	//routes.Setup(app)
 	routes.SetupRoutes(app)
 

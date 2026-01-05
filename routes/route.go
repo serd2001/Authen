@@ -27,4 +27,5 @@ func SetupRoutes(app *fiber.App) {
 	// jobs routes
 	job := api.Group("/job")
 	jobs.JobRoutes(job)
+	
 }
